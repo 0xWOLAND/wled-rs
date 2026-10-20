@@ -31,7 +31,7 @@ fn main() -> anyhow::Result<()> {
         initial,
     )?;
 
-    let _wifi = wifi::start(peripherals.modem, sysloop, nvs)?;
+    let _wifi = wifi::start_access_point(peripherals.modem, sysloop, nvs)?;
 
     let mut ota = EspOta::new()?;
     let info = DeviceInfo {

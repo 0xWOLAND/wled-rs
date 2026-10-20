@@ -1,13 +1,7 @@
-//! Wi-Fi bring-up test for the ESP32, in one of two modes chosen at build time:
-//!
-//! - Station (`WIFI_EAP_USERNAME` and `WIFI_EAP_PASSWORD` set): joins a WPA2-Enterprise network such
-//!   as "Caltech Secure" and pings the gateway and the internet. See `sta.rs`.
-//! - Access point (otherwise): hosts "wled-rs-test" and pings whoever joins. See `ap.rs`.
-//!
-//! The serial log shows the ESP32's side of either test.
+//! Wi-Fi bring-up test for the ESP32: hosts "wled-rs-test" and pings whoever joins. See `ap.rs`.
+//! The serial log shows the ESP32's side of the test.
 
 mod ap;
-mod sta;
 
 use std::net::Ipv4Addr;
 
@@ -20,21 +14,6 @@ use esp_idf_svc::{
     sys,
     wifi::{BlockingWifi, EspWifi},
 };
-
-const EAP_USERNAME: Option<&str> = setting(option_env!("WIFI_EAP_USERNAME"));
-const EAP_PASSWORD: Option<&str> = setting(option_env!("WIFI_EAP_PASSWORD"));
-const _: () = assert!(
-    EAP_USERNAME.is_some() == EAP_PASSWORD.is_some(),
-    "set both WIFI_EAP_USERNAME and WIFI_EAP_PASSWORD for station mode, or neither for access point mode"
-);
-
-/// An empty variable (e.g. `export WIFI_EAP_PASSWORD=`) counts as unset.
-const fn setting(value: Option<&'static str>) -> Option<&'static str> {
-    match value {
-        Some(v) if !v.is_empty() => Some(v),
-        _ => None,
-    }
-}
 
 fn main() -> anyhow::Result<()> {
     sys::link_patches();
@@ -52,19 +31,7 @@ fn main() -> anyhow::Result<()> {
         sysloop.clone(),
     )?;
 
-    match (EAP_USERNAME, EAP_PASSWORD) {
-        (Some(username), Some(password)) => {
-            let eap = sta::Eap {
-                ssid: setting(option_env!("WIFI_SSID")).unwrap_or("Caltech Secure"),
-                identity: setting(option_env!("WIFI_EAP_IDENTITY")).unwrap_or(username),
-                username,
-                password,
-                ca_cert: include_bytes!(concat!(env!("OUT_DIR"), "/eap_ca.pem")),
-            };
-            sta::run(wifi, sysloop, &eap)
-        }
-        _ => ap::run(wifi, sysloop),
-    }
+    ap::run(wifi, sysloop)
 }
 
 /// Sends four pings and logs the summary.

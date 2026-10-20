@@ -28,8 +28,7 @@ commands:
   flash [--port P]   build, flash over USB and open the serial monitor (when run in a terminal)
   ota <host>         build and upload over Wi-Fi, e.g. `cargo xtask ota 192.168.71.1`
 
-the access point password defaults to `caltech!`; override it with WLED_AP_PASSWORD (8-63 chars).
-to join Caltech Secure instead, set WIFI_EAP_USERNAME and WIFI_EAP_PASSWORD in firmware/.env";
+the access point password defaults to `caltech!`; override it with WLED_AP_PASSWORD (8-63 chars)";
 
 fn main() -> ExitCode {
     let args: Vec<String> = env::args().skip(1).collect();
