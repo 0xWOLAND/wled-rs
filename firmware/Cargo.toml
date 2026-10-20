@@ -1,0 +1,33 @@
+[package]
+name = "wled-rs"
+version = "0.1.0"
+edition = "2021"
+resolver = "2"
+
+[[bin]]
+name = "wled-rs"
+harness = false # no host test harness on the target
+
+[dependencies]
+protocol = { path = "../protocol" }
+serde = "1"
+serde_json = "1"
+anyhow = "1"
+log = "0.4"
+esp-idf-svc = "0.52"
+ws2812-esp32-rmt-driver = "0.14"
+
+[build-dependencies]
+embuild = "0.33"
+flate2 = "1"
+
+[profile.release]
+opt-level = "s"
+debug = true # symbols stay on the host; they are not flashed
+
+[profile.dev]
+opt-level = "z"
+debug = true
+
+[package.metadata.esp-idf-sys]
+esp_idf_sdkconfig_defaults = ["sdkconfig.defaults"]

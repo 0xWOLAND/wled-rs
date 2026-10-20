@@ -1,0 +1,7 @@
+/target
+/web/dist
+/firmware/target
+/firmware/.embuild
+/wifi-test/target
+/wifi-test/.env
+/firmware/.env

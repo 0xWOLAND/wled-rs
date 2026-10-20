@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>wled-rs</title>
+    <style>
+        :root {
+            color-scheme: light dark;
+            --bg: #f6f6f4; --fg: #1c1c1c; --muted: #6b6b6b; --card: #ffffff;
+            --line: #d9d9d4; --accent: #e8932a; --error: #c0392b;
+        }
+        @media (prefers-color-scheme: dark) {
+            :root { --bg: #161616; --fg: #ececec; --muted: #9a9a9a; --card: #222; --line: #3a3a3a; --error: #ff6b5b; }
+        }
+        * { box-sizing: border-box; }
+        body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.4 system-ui, sans-serif; }
+        main { max-width: 28rem; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
+        h1 { font-size: 1.4rem; margin: 0 0 1rem; }
+        .muted { color: var(--muted); }
+        .error { color: var(--error); }
+        .modes { display: grid; grid-template-columns: repeat(4, 1fr); gap: .5rem; margin-bottom: 1.25rem; }
+        button {
+            font: inherit; padding: .9rem 0; border-radius: .6rem; cursor: pointer;
+            border: 1px solid var(--line); background: var(--card); color: var(--fg);
+        }
+        button.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+        .field { display: flex; flex-direction: column; gap: .4rem; margin-bottom: 1.25rem; }
+        input[type=range] { width: 100%; accent-color: var(--accent); }
+        input[type=color] { width: 100%; height: 3rem; border: 1px solid var(--line); border-radius: .6rem; background: var(--card); }
+        details { margin-top: 2rem; border-top: 1px solid var(--line); padding-top: 1rem; }
+        summary { cursor: pointer; font-weight: 600; }
+    </style>
+</head>
+<body>
+    <script type="module">
+        import init from "./web.js";
+        init();
+    </script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+[workspace]
+resolver = "2"
+members = ["protocol", "web", "xtask"]
+# `firmware` and `wifi-test` target xtensa-esp32-espidf with the `esp` toolchain, so they are built on their own.
+exclude = ["firmware", "wifi-test"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+
+[workspace.dependencies]
+protocol = { path = "protocol" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"

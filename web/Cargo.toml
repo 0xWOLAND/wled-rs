@@ -1,0 +1,12 @@
+[package]
+name = "web"
+version.workspace = true
+edition.workspace = true
+
+# The UI only runs in the browser; on the host this crate builds to an empty binary.
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+protocol.workspace = true
+serde.workspace = true
+leptos = { version = "0.8", features = ["csr"] }
+gloo-net = { version = "0.7", default-features = false, features = ["http", "json"] }
+web-sys = { version = "0.3", features = ["File", "FileList", "HtmlInputElement"] }
