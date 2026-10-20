@@ -16,6 +16,7 @@ anyhow = "1"
 log = "0.4"
 esp-idf-svc = "0.52"
 ws2812-esp32-rmt-driver = "0.14"
+smart_led_effects = "0.1.8"
 
 [build-dependencies]
 embuild = "0.33"

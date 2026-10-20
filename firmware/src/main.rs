@@ -2,6 +2,7 @@ mod config;
 mod http;
 mod led;
 mod store;
+mod switch;
 mod wifi;
 
 use esp_idf_svc::{
@@ -30,6 +31,8 @@ fn main() -> anyhow::Result<()> {
         store,
         initial,
     )?;
+    // Mode switch throws on GPIO32 (position A) and GPIO33 (position B), common to GND.
+    switch::start(peripherals.pins.gpio32, peripherals.pins.gpio33, light.clone())?;
 
     let _wifi = wifi::start_access_point(peripherals.modem, sysloop, nvs)?;
 

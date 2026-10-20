@@ -43,9 +43,18 @@ impl Rgb {
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum Mode {
     Off,
-    Warm,
-    Cool,
+    /// Animated: hues cycling along the strip.
+    Rainbow,
+    /// Animated: random coloured sparkles fading out.
+    Twinkle,
     Rgb(Rgb),
+}
+
+impl Mode {
+    /// Whether the mode is an animation rather than one colour on every pixel.
+    pub const fn is_effect(self) -> bool {
+        matches!(self, Mode::Rainbow | Mode::Twinkle)
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -55,38 +64,29 @@ pub struct LightState {
     pub brightness: u8,
 }
 
-impl Mode {
-    /// ~2700 K incandescent white.
-    pub const WARM: Rgb = Rgb::new(255, 147, 41);
-    /// ~8000 K daylight white.
-    pub const COOL: Rgb = Rgb::new(201, 226, 255);
-
-    /// Full-brightness colour for this mode.
-    pub const fn base_color(self) -> Rgb {
-        match self {
-            Mode::Off => Rgb::BLACK,
-            Mode::Warm => Self::WARM,
-            Mode::Cool => Self::COOL,
-            Mode::Rgb(rgb) => rgb,
-        }
-    }
-}
-
 impl LightState {
-    /// Colour to drive every pixel with: the mode's colour scaled by gamma-corrected brightness,
-    /// so the slider feels linear to the eye.
-    pub fn color(&self) -> Rgb {
-        let base = self.mode.base_color();
+    /// Scales a full-brightness colour by the gamma-corrected brightness, so the slider feels
+    /// linear to the eye. Applies to effect frames as well as solid colours.
+    pub fn dim(&self, c: Rgb) -> Rgb {
         let level = (f32::from(self.brightness) / 255.0).powf(2.2);
-        let scale = |c: u8| (f32::from(c) * level).round() as u8;
-        Rgb::new(scale(base.r), scale(base.g), scale(base.b))
+        let scale = |v: u8| (f32::from(v) * level).round() as u8;
+        Rgb::new(scale(c.r), scale(c.g), scale(c.b))
+    }
+
+    /// The colour every pixel shows, or `None` for animated modes.
+    pub fn solid_color(&self) -> Option<Rgb> {
+        match self.mode {
+            Mode::Off => Some(Rgb::BLACK),
+            Mode::Rgb(c) => Some(self.dim(c)),
+            Mode::Rainbow | Mode::Twinkle => None,
+        }
     }
 }
 
 impl Default for LightState {
     fn default() -> Self {
         Self {
-            mode: Mode::Warm,
+            mode: Mode::Rainbow,
             brightness: 128,
         }
     }
@@ -110,11 +110,12 @@ mod tests {
         let json = serde_json::to_string(&Mode::Rgb(Rgb::new(1, 2, 3))).unwrap();
         assert_eq!(json, r#"{"kind":"rgb","r":1,"g":2,"b":3}"#);
         assert_eq!(serde_json::to_string(&Mode::Off).unwrap(), r#"{"kind":"off"}"#);
+        assert_eq!(serde_json::to_string(&Mode::Rainbow).unwrap(), r#"{"kind":"rainbow"}"#);
     }
 
     #[test]
     fn state_round_trip() {
-        for mode in [Mode::Off, Mode::Warm, Mode::Cool, Mode::Rgb(Rgb::new(255, 0, 128))] {
+        for mode in [Mode::Off, Mode::Rainbow, Mode::Twinkle, Mode::Rgb(Rgb::new(255, 0, 128))] {
             let state = LightState { mode, brightness: 42 };
             let json = serde_json::to_string(&state).unwrap();
             assert_eq!(serde_json::from_str::<LightState>(&json).unwrap(), state);
@@ -122,15 +123,24 @@ mod tests {
     }
 
     #[test]
-    fn color_scales_with_brightness() {
-        let full = LightState { mode: Mode::Warm, brightness: 255 };
-        assert_eq!(full.color(), Mode::WARM);
+    fn dim_scales_with_brightness() {
+        let c = Rgb::new(255, 128, 0);
+        let full = LightState { mode: Mode::Rgb(c), brightness: 255 };
+        assert_eq!(full.solid_color(), Some(c));
 
         let dark = LightState { brightness: 0, ..full };
-        assert_eq!(dark.color(), Rgb::BLACK);
+        assert_eq!(dark.solid_color(), Some(Rgb::BLACK));
 
-        let half = LightState { brightness: 128, ..full }.color();
+        let half = LightState { brightness: 128, ..full }.dim(c);
         assert!(half.r > 0 && half.r < 128, "gamma keeps mid brightness below linear: {half:?}");
+    }
+
+    #[test]
+    fn effects_have_no_solid_color() {
+        for mode in [Mode::Rainbow, Mode::Twinkle] {
+            assert!(mode.is_effect());
+            assert_eq!(LightState { mode, brightness: 255 }.solid_color(), None);
+        }
     }
 
     #[test]
@@ -147,6 +157,6 @@ mod tests {
     #[test]
     fn off_is_black_at_any_brightness() {
         let state = LightState { mode: Mode::Off, brightness: 255 };
-        assert_eq!(state.color(), Rgb::BLACK);
+        assert_eq!(state.solid_color(), Some(Rgb::BLACK));
     }
 }

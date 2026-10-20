@@ -23,12 +23,10 @@ const USAGE: &str = "\
 usage: cargo xtask <command>
 
 commands:
-  web                build the egui UI into web/dist
+  web                build the Leptos UI into web/dist
   build              build web UI + firmware, write target/wled-rs.bin (the OTA image)
   flash [--port P]   build, flash over USB and open the serial monitor (when run in a terminal)
-  ota <host>         build and upload over Wi-Fi, e.g. `cargo xtask ota 192.168.71.1`
-
-the access point password defaults to `caltech!`; override it with WLED_AP_PASSWORD (8-63 chars)";
+  ota <host>         build and upload over Wi-Fi, e.g. `cargo xtask ota 192.168.71.1`";
 
 fn main() -> ExitCode {
     let args: Vec<String> = env::args().skip(1).collect();
@@ -85,9 +83,6 @@ fn build_web() -> Result {
 
 /// Builds everything and returns the firmware ELF path. Also writes `target/wled-rs.bin`.
 fn build_all() -> Result<PathBuf> {
-    if env::var("WLED_AP_PASSWORD").is_ok_and(|p| !(8..=63).contains(&p.len())) {
-        return Err("WLED_AP_PASSWORD must be 8-63 characters (WPA2)".into());
-    }
     build_web()?;
 
     let firmware = root().join("firmware");

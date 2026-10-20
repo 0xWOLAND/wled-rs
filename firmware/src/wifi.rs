@@ -1,4 +1,4 @@
-//! Runs the ESP32 as a WPA2 access point.
+//! Runs the ESP32 as an open (passwordless) access point.
 
 use anyhow::anyhow;
 use esp_idf_svc::{
@@ -8,7 +8,7 @@ use esp_idf_svc::{
     wifi::{AccessPointConfiguration, AuthMethod, BlockingWifi, Configuration, EspWifi},
 };
 
-use crate::config::{AP_PASSWORD, AP_SSID};
+use crate::config::AP_SSID;
 
 /// Starts the access point. The returned driver must be kept alive.
 pub fn start_access_point(
@@ -20,10 +20,7 @@ pub fn start_access_point(
 
     wifi.set_configuration(&Configuration::AccessPoint(AccessPointConfiguration {
         ssid: AP_SSID.try_into().map_err(|_| anyhow!("SSID too long"))?,
-        password: AP_PASSWORD
-            .try_into()
-            .map_err(|_| anyhow!("password too long"))?,
-        auth_method: AuthMethod::WPA2Personal,
+        auth_method: AuthMethod::None,
         channel: 1,
         ..Default::default()
     }))?;

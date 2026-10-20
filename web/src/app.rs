@@ -3,6 +3,9 @@ use protocol::{LightState, Mode, Rgb};
 
 use crate::api;
 
+/// How often the page re-reads the device state (picks up hardware switch flips).
+const POLL_INTERVAL: std::time::Duration = std::time::Duration::from_secs(2);
+
 #[component]
 pub fn App() -> impl IntoView {
     let state = RwSignal::new(None::<LightState>);
@@ -49,10 +52,33 @@ fn LightControls(state: RwSignal<Option<LightState>>, error: RwSignal<Option<Str
         _ => Rgb::new(255, 0, 128),
     });
 
+    // The hardware switch can change the mode at any time, so keep in sync with the device.
+    // Skipped while a local change is being saved so a stale reply can't undo it.
+    if let Ok(handle) = set_interval_with_handle(
+        move || {
+            if saver.busy() {
+                return;
+            }
+            spawn_local(async move {
+                if let Ok(remote) = api::state().await {
+                    if !saver.busy() && state.get_untracked() != Some(remote) {
+                        if let Mode::Rgb(c) = remote.mode {
+                            rgb.set(c);
+                        }
+                        state.set(Some(remote));
+                    }
+                }
+            });
+        },
+        POLL_INTERVAL,
+    ) {
+        on_cleanup(move || handle.clear());
+    }
+
     let modes: [(&str, fn(Rgb) -> Mode); 4] = [
         ("Off", |_| Mode::Off),
-        ("Warm", |_| Mode::Warm),
-        ("Cool", |_| Mode::Cool),
+        ("Rainbow", |_| Mode::Rainbow),
+        ("Twinkle", |_| Mode::Twinkle),
         ("RGB", Mode::Rgb),
     ];
     let mode_buttons = modes
@@ -178,6 +204,10 @@ impl Saver {
             pending: StoredValue::new(None),
             error,
         }
+    }
+
+    fn busy(self) -> bool {
+        self.in_flight.get_value()
     }
 
     fn save(self, state: LightState) {
